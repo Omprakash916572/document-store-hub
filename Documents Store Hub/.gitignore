@@ -1,0 +1,15 @@
+*.class
+.apt_generated
+.apt_generated_tests
+.classpath
+.project
+.factorypath
+.project
+.settings/
+/.settings
+bin/
+bin
+target
+target/
+.DS_Store
+.sts4-cache
