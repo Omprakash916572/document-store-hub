@@ -2,6 +2,8 @@ package com.dev.service;
 
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.dev.DTO.JWTTokenResponseDTO;
-import com.dev.DTO.JwtToken;
+import com.dev.DTO.JwtTokenDTO;
 import com.dev.config.CustomUserDetailService;
 import com.dev.entity.Users;
 import com.dev.repo.UserRepository;
@@ -21,6 +23,8 @@ import com.dev.spring.helper.JwtUtil;
 
 @Service
 public class AuthService {
+	
+	private static final Logger _logger = LoggerFactory.getLogger(AuthService.class);
 	
 	@Autowired
 	private AuthenticationManager authenticationManager;
@@ -35,21 +39,22 @@ public class AuthService {
 	private UserRepository userRepository;
 
 	@SuppressWarnings("null")
-	public JWTTokenResponseDTO generatToken(JwtToken jwtToken) throws Exception {
+	public JWTTokenResponseDTO generatToken(JwtTokenDTO jwtTokenDTO) throws Exception {
 		
-		if(Objects.isNull(jwtToken) && jwtToken.getUsername().isEmpty()) {
+		_logger.info("token generate api called.");
+		
+		if(Objects.isNull(jwtTokenDTO) && jwtTokenDTO.getUsername().isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Username required.", null);
 		}
 		
-		Users user = userRepository.findByEmail(jwtToken.getUsername());
+		Users user = userRepository.findByEmail(jwtTokenDTO.getUsername());
 		
 		if (Objects.isNull(user) || user.getEmail().isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found !!.", null);
 		}
 
-		JWTTokenResponseDTO jWTResponse = new JWTTokenResponseDTO();
 		try {
-			this.authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(jwtToken.getUsername(), jwtToken.getPassword()));
+			this.authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(jwtTokenDTO.getUsername(), jwtTokenDTO.getPassword()));
 		} catch (UsernameNotFoundException ex) {
 			ex.printStackTrace();
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Bad Credential", null);
@@ -57,10 +62,16 @@ public class AuthService {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Bad Credential", null);
 		}
 
-		UserDetails userDetails = this.customUserDetailService.loadUserByUsername(jwtToken.getUsername());
-		String generateToken = jwtUtil.generateToken(userDetails);
-		jWTResponse.setToken(generateToken);
-		jWTResponse.setToken_expiration(jwtUtil.extractExpiration(generateToken));
+		UserDetails userDetails = this.customUserDetailService.loadUserByUsername(jwtTokenDTO.getUsername());
+		String jwtToken = jwtUtil.generateToken(userDetails);
+		JWTTokenResponseDTO jWTResponse = new JWTTokenResponseDTO();
+		if (jwtToken != null && !jwtToken.isEmpty()) {
+			_logger.info("token generated succefully.");
+			jWTResponse.setToken(jwtToken);
+			jWTResponse.setToken_expiration(jwtUtil.extractExpiration(jwtToken));
+		}else {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Something went wrong to generate token.", null);
+		}
 		return jWTResponse;
 	}
 

@@ -1,6 +1,6 @@
 package com.dev.DTO;
 
-public class JwtToken {
+public class JwtTokenDTO {
 
 	private String username;
 	private String password;

@@ -3,6 +3,8 @@ package com.dev.config;
 import java.util.ArrayList;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.User;
@@ -18,11 +20,14 @@ import com.dev.repo.UserRepository;
 @Service
 public class CustomUserDetailService implements UserDetailsService {
 	
+	private static final Logger logger = LoggerFactory.getLogger(CustomUserDetailService.class);
+	
 	@Autowired
 	private UserRepository userRepository;
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		logger.info("loadUserByUsername function called.");
 		
 		Users user = userRepository.findByEmail(username);
 		
@@ -31,6 +36,7 @@ public class CustomUserDetailService implements UserDetailsService {
 		}
 
 		if (user.getEmail().equals(username)) {
+			logger.info("user validate succesfully.");
 			return new User( user.getEmail(),user.getPassword(),new ArrayList<>());
 
 		} else {

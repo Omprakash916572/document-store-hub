@@ -1,12 +1,15 @@
 package com.dev.filter;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.Objects;
+
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +28,8 @@ import io.jsonwebtoken.Jwts;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+	
+	private static final Logger _logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
 	@Autowired
 	private JwtUtil jwtUtil;
@@ -36,11 +41,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		
+		_logger.info("JwtAuthenticationFilter called.");
 		
 		String tokenWithBearer = request.getHeader("Authorization");
 		String extractUsername = "";
 
 		if (Objects.nonNull(tokenWithBearer) && tokenWithBearer.startsWith("Bearer")) {
+			_logger.info("authorization validation.");
 
 			String tokenWithotBearer = tokenWithBearer.substring(7);
 
