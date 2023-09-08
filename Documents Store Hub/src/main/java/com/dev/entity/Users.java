@@ -38,7 +38,7 @@ public class Users {
 	private String password;
 
 	@OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
-	private Set<Documents> Documents;
+	private Set<Documents> documents;
 
 	public Integer getId() {
 		return id;
@@ -65,11 +65,11 @@ public class Users {
 	}
 
 	public Set<Documents> getDocuments() {
-		return Documents;
+		return documents;
 	}
 
 	public void setDocuments(Set<Documents> documents) {
-		Documents = documents;
+		this.documents = documents;
 	}
 
 	public String getFirstName() {

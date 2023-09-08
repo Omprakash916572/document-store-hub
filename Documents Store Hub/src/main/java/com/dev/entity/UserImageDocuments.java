@@ -48,6 +48,10 @@ public class UserImageDocuments {
 
 	@Column(name = "update_ts")
 	private Timestamp updateTs;
+	
+	@ManyToOne
+	@JoinColumn(name = "users_id")
+	private Users users;
 
 	@ManyToOne
 	@JoinColumn(name = "document_id")
@@ -139,5 +143,13 @@ public class UserImageDocuments {
 
 	public void setDocument(Documents document) {
 		this.document = document;
+	}
+
+	public Users getUsers() {
+		return users;
+	}
+
+	public void setUsers(Users users) {
+		this.users = users;
 	}
 }

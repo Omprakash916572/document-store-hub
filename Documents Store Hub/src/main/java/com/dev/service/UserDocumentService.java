@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 import javax.servlet.http.HttpServletResponse;
@@ -32,12 +33,15 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriUtils;
 
+import com.dev.DTO.DocumentDTO;
+import com.dev.DTO.DocumentsResponseDTO;
 import com.dev.DTO.UserImageDocumentsDTO;
 import com.dev.DTO.UserImageDocumentsResponseDTO;
 import com.dev.entity.Documents;
 import com.dev.entity.UserImageDocuments;
 import com.dev.repo.DocumentsRepo;
 import com.dev.repo.UserImageDocumentsRepo;
+import com.dev.repo.UserRepository;
 import com.dev.utils.MIMETypes;
 import com.dev.utils.ProjectJsonUtils;
 import com.dev.utils.ProjectJsonUtils.DocumentCategory;
@@ -54,9 +58,12 @@ public class UserDocumentService {
 
 	@Autowired
 	private UserImageDocumentsRepo userImageDocumentsRepo;
-	
+
 	@Autowired
 	private DocumentsRepo cocumentsRepo;
+	
+	@Autowired
+    private UserRepository userRepository;
 
 	@Value("${user.documents.image.location}")
 	private String userDocumentImageLocation;
@@ -131,12 +138,13 @@ public class UserDocumentService {
 				userImageDocumentsObject = this.dtoToEntity(userImageDocumentsDTO, userImageDocumentsObject);
 
 				Documents documents = new Documents();
-				
-				ImageExtensions imageExtensions = ProjectJsonUtils.ImageExtensions.fromString(userImageDocumentsDTO.getFile_extension());
+
+				ImageExtensions imageExtensions = ProjectJsonUtils.ImageExtensions
+						.fromString(userImageDocumentsDTO.getFile_extension());
 
 				if (Objects.nonNull(imageExtensions)) {
 					documents.setDocumentType(userImageDocumentsDTO.getFile_extension().toLowerCase());
-				}else {
+				} else {
 					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This format not supported .");
 				}
 //				if (userImageDocumentsDTO.getFile_extension().equalsIgnoreCase("jpg")
@@ -153,7 +161,8 @@ public class UserDocumentService {
 //					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This format not supported .");
 //				}
 
-				if (Objects.nonNull(userImageDocumentsDTO.getDocument_category()) && !userImageDocumentsDTO.getDocument_category().isEmpty()) {
+				if (Objects.nonNull(userImageDocumentsDTO.getDocument_category())
+						&& !userImageDocumentsDTO.getDocument_category().isEmpty()) {
 					DocumentCategory documentCategoryEnum = ProjectJsonUtils.DocumentCategory
 							.fromString(userImageDocumentsDTO.getDocument_category());
 					if (Objects.nonNull(documentCategoryEnum)) {
@@ -169,13 +178,13 @@ public class UserDocumentService {
 				// Save Documents into Local storage
 				String modifiedFileName = this.saveImageToLocalStorage(userImageDocumentsDTO.getImage());
 				String convertImageExtensionIntoLowerCase = convertImageExtensionIntoLowerCase(modifiedFileName);
-				
+
 				if (!convertImageExtensionIntoLowerCase.equals("")) {
 					userImageDocumentsObject.setLocalStorageImageDocumentName(convertImageExtensionIntoLowerCase);
 				} else {
 					userImageDocumentsObject.setLocalStorageImageDocumentName(modifiedFileName);
 				}
-				
+
 				// Convert image to pdf
 				String imageToPdf = this.imageToPdf(userImageDocumentsObject.getLocalStorageImageDocumentName());
 
@@ -207,8 +216,9 @@ public class UserDocumentService {
 		return userImageDocumentsResponseDTO;
 	}
 
-	private UserImageDocumentsResponseDTO entityToDTO(UserImageDocuments sourceObject, UserImageDocumentsResponseDTO targetObject) {
-		
+	private UserImageDocumentsResponseDTO entityToDTO(UserImageDocuments sourceObject,
+			UserImageDocumentsResponseDTO targetObject) {
+
 		if (sourceObject.getId() != null) {
 			targetObject.setId(sourceObject.getId());
 		}
@@ -234,20 +244,23 @@ public class UserDocumentService {
 			_logger.info("file not found.");
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "file not found.", null);
 		}
-		
+
 		Resource resource = null;
-		if (userImageDocuments.getLocalStoragePdfDocumentName() != null && !userImageDocuments.getLocalStoragePdfDocumentName().isEmpty()) {
-			
-			 resource = loadAsResource(userImageDocuments.getLocalStoragePdfDocumentName());
-			 userImageDocuments.setOrignalDocumentName(userImageDocuments.getOrignalDocumentName().replaceAll(".jpg", ".pdf").replaceAll(".png", ".pdf").replaceAll(".jpeg", ".pdf"));
-			 
+		if (userImageDocuments.getLocalStoragePdfDocumentName() != null
+				&& !userImageDocuments.getLocalStoragePdfDocumentName().isEmpty()) {
+
+			resource = loadAsResource(userImageDocuments.getLocalStoragePdfDocumentName());
+			userImageDocuments.setOrignalDocumentName(userImageDocuments.getOrignalDocumentName()
+					.replaceAll(".jpg", ".pdf").replaceAll(".png", ".pdf").replaceAll(".jpeg", ".pdf"));
+
 		} else {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "document not exist.", null);
 		}
 
 		if (resource.exists()) {
 
-			String encodedFilename = UriUtils.encode(userImageDocuments.getOrignalDocumentName(), StandardCharsets.UTF_8);
+			String encodedFilename = UriUtils.encode(userImageDocuments.getOrignalDocumentName(),
+					StandardCharsets.UTF_8);
 			response.setHeader("Content-disposition", "attachment; filename=\"" + encodedFilename + "\"");
 			response.addHeader("mime-type", this.getContentTypeForFile(userImageDocuments.getOrignalDocumentName()));
 			response.setContentType(this.getContentTypeForFile(userImageDocuments.getDocument().getDocumentType()));
@@ -255,11 +268,11 @@ public class UserDocumentService {
 			_logger.info("documents downloded.");
 			return resource;
 		} else {
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "document not exist in local disk.", null);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "document not exist in local disk.",
+					null);
 		}
 	}
 
-	
 	public Resource loadAsResource(String filename) {
 
 		Resource resource = new FileSystemResource(this.userDocumentPdfLocation + filename);
@@ -272,7 +285,7 @@ public class UserDocumentService {
 
 		return null;
 	}
-	
+
 	public String getContentTypeForFile(String fileType) {
 
 		String contentType = MIMETypes.mappings.get(fileType.toLowerCase());
@@ -347,14 +360,16 @@ public class UserDocumentService {
 				throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Document extension required.");
 			}
 			if (!sourceObject.getFile_extension().equalsIgnoreCase(documentExtension)) {
-				throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,"Extension not match with uploaded document .");
+				throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,
+						"Extension not match with uploaded document .");
 			}
 		} else {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "file extension required", null);
 		}
 
-		String convertImageExtensionIntoLowerCase = convertImageExtensionIntoLowerCase(sourceObject.getImage().getOriginalFilename());
-		
+		String convertImageExtensionIntoLowerCase = convertImageExtensionIntoLowerCase(
+				sourceObject.getImage().getOriginalFilename());
+
 		if (!convertImageExtensionIntoLowerCase.equals("")) {
 			targetObject.setOrignalDocumentName(convertImageExtensionIntoLowerCase);
 		} else {
@@ -376,14 +391,14 @@ public class UserDocumentService {
 
 		return targetObject;
 	}
-	
+
 	public Timestamp dateAndTime() {
 		LocalDateTime date = LocalDateTime.now();
 		DateTimeZone tz = DateTimeZone.getDefault();
 		Timestamp ts = new Timestamp(date.toDateTime(tz).toDateTime(DateTimeZone.UTC).getMillis());
 		return ts;
 	}
-	
+
 	public String convertImageExtensionIntoLowerCase(String imageName) {
 
 		String[] split = null;
@@ -410,14 +425,17 @@ public class UserDocumentService {
 		_logger.info("imageToPdf function called.");
 
 		Document document = new Document();
-		String fileName = documentOrignalName.replaceAll(".jpg", "").replaceAll(".png", "").replaceAll(".jpeg", "") + ".pdf";
+		String fileName = documentOrignalName.replaceAll(".jpg", "").replaceAll(".png", "").replaceAll(".jpeg", "")
+				+ ".pdf";
 
 		try {
-			PdfWriter pdfWriter = PdfWriter.getInstance(document,new FileOutputStream(new File(this.userDocumentPdfLocation, fileName)));
+			PdfWriter pdfWriter = PdfWriter.getInstance(document,
+					new FileOutputStream(new File(this.userDocumentPdfLocation, fileName)));
 			document.open();
 
 			document.newPage();
-			Image image = Image.getInstance(new File(this.userDocumentImageLocation, documentOrignalName).getAbsolutePath());
+			Image image = Image
+					.getInstance(new File(this.userDocumentImageLocation, documentOrignalName).getAbsolutePath());
 			image.setAbsolutePosition(0, 0);
 			image.setBorderWidth(10);
 			image.scaleAbsoluteHeight(PageSize.A4.getHeight());
@@ -449,6 +467,24 @@ public class UserDocumentService {
 			}
 		}
 		return null;
+	}
+
+	public List<DocumentDTO> getDocumentsList(DocumentDTO documentDTO) {
+
+		_logger.info("get document list function called.");
+
+		List<DocumentDTO> userDocumentDTO =null;
+		if (Objects.nonNull(documentDTO)) {
+
+			if (documentDTO.getUserId() != null) {
+
+				userDocumentDTO = userRepository.findDocumentsByUserId(documentDTO.getUserId());
+			} else {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId Required !!.", null);
+			}
+
+		}
+		return userDocumentDTO;
 	}
 
 }

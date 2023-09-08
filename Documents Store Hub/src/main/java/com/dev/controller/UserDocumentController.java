@@ -1,5 +1,7 @@
 package com.dev.controller;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
@@ -12,9 +14,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dev.DTO.DocumentDTO;
+import com.dev.DTO.DocumentsResponseDTO;
 import com.dev.DTO.UserImageDocumentsDTO;
 import com.dev.DTO.UserImageDocumentsResponseDTO;
 import com.dev.service.UserDocumentService;
@@ -44,6 +49,15 @@ public class UserDocumentController {
 		Resource downloadImageResource = userDocumentService.downloadImageResource(imageId,response);
 		return downloadImageResource;
 	}
+	
+	@PostMapping("/documents")
+	public List<DocumentDTO> getDocumentsList(@RequestBody DocumentDTO documentDTO) throws NotFoundException {
+		_logger.info("document list controller called for userId : "+documentDTO.getUserId());
+		return userDocumentService.getDocumentsList(documentDTO);
+	}
+	
+	
+	
 	
 //	@PostMapping("/multiFile")
 //    public @ResponseBody List<String> handleFileUpload(
